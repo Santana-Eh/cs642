@@ -1,0 +1,48 @@
+1.	Update System  sudo yum update
+2.	 Ensure gpgcheck is globally activated  gpgcheck option found in the main section of the /etc/yum.conf and individual /etc/yum/repos.d/* files determines if an RPM package’s signature is checked prior to its installation  Commands: grep ^gpgcheck /etc/yum.conf (gpgcheck=1  should always equal 1) 
+3.	Ensure password fields are not empty  All accounts must have passwords or be locked to prevent the account from being used by an unauthorized user. Command: cat /etc/shadow | awk -F: '($2 == "" ) { print $1 " does not have a password "}'
+If any accounts in the /etc/shadow file do not have a password, run the following to lock the account  passwd -l <username>
+4.	Ensure iptables is installed  iptables is required for firewall management and configuration  run the following command and verify iptables is installed  rpm -q iptables 
+If not, 
+Run the following the command to install iptables
+Yum install iptables
+5.	Ensure /etc/hosts.allow is configured  Audit: run the following command and verify the contents of the /etc/hosts.allow file: cat /etc/hosts.allow 
+6.	Ensure /etc/hosts.deny is configured  Audit: cat /etc/hosts.deny  run the following command to create /etc/hosts.deny  echo "ALL: ALL" >> /etc/hosts.deny
+7.	Ensure TCP Wrappers is installed: 
+Audit: rpm -q tcp_wrappers
+Rpm -q tcp_wrappers-libs
+Remediation
+Yum install tcp_wrappers
+Notes: To verify if a service supports TCP Wrappers, run the following command:
+ # ldd | grep libwrap.so
+ If there is any output, then the service supports TCP Wrappers.
+TCP Wrapper is a host-based networking ACL system, used to filter network access to Internet Protocol servers on (Unix-like) operating systems such as Linux or BSD. It allows host or subnetwork IP addresses, names and/or ident query replies, to be used as tokens on which to filter for access control purposes.
+8.	Ensure logging is configured 
+A great deal of important security-related information is sent via syslog-ng (e.g., successful and failed su attempts, failed login attempts, root login attempts, etc.).
+Audit:
+Review the contents of the /etc/rsyslog.conf file to ensure appropriate logging is set 
+Edit the following lines in the /etc/rsyslog.conf file as appropriate for your environment
+9.	Ensure rsyslog service is enabled 
+-	Install rsyslog and ensure the service is running 
+Audit: 
+Run the following command verify runlevels 2 through 5 are “on”: 
+Chkconfig - -list rsyslog
+Enable by running  chkconfig rsyslog on 
+10.	Ensure SSH root login in disabled 
+Rationale: 
+Disallowing root logins over SSH requires system admins to authenticate using their own individual account, then escalating to root via sudo or su. This in turn limits opportunity for non-repudiation and provides a clear audit trail in the event of a security incident
+Audit: 
+Run the following command and verify the output matches:
+# grep "^PermitRootLogin" /etc/ssh/sshd_config PermitRootLogin no
+Allow some specific users:
+    AllowUsers [username]
+If not, edit the /etc/ssh/sshd_config file to set the parameter
+
+Set the permissions on the sshd_config file so that only root users can change its contents:
+#chown root:root /etc/ssh/sshd_config
+#chmod 600 /etc/ssh/sshd_config
+
+Disable the IP Forwarding by setting the net.ipv4.ip_forward parameter to 0 in “/etc/sysctl.conf”
+Disable the Send Packet Redirects by setting  the net.ipv4.conf.all.send_redirects and net.ipv4.conf.default.send_redirects parameters to 0 in “/etc/sysctl.conf”
+Disable ICMP Redirect Acceptance by setting the net.ipv4.conf.all.accept_redirects and net.ipv4.conf.default.accept_redirects parameters to 0 in “/etc/sysctl.conf”
+Enable Bad Error Message Protection by setting the net.ipv4.icmp_ignore_bogus_error_responses parameter to 1 in “/etc/sysctl.conf”
